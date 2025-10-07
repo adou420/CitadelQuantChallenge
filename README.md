@@ -1,32 +1,69 @@
-🧠 LSTM Forecasting for Financial Time Series
+# LSTM Forecasting for Financial Time Series
 
-Citadel Quant Challenge 2025 — Research Track
+**Citadel Quant Challenge 2025 — Research Track**
 
-📄 Overview
+---
 
-This project investigates the use of an autoregressive LSTM model for multivariate financial time series forecasting.
-It was developed as part of the Research Track of the Citadel Quant Challenge 2025, with the objective of assessing the performance of sequential models on market data.
+## Overview
 
-The core idea is to design a decoder-only LSTM capable of predicting the missing parameters of a financial feature vector over a future horizon, given the known parameters and historical information.
+This project explores an **autoregressive decoder-only LSTM** for multivariate financial time series forecasting. The goal is to predict missing financial features (`Y1`, `Y2`) from known features (`A–N`) using temporal dependencies.
 
-⚙️ Model Architecture
+The model was developed for the *Citadel Quant Challenge 2025 (Research Track)* to test whether sequential deep learning can improve short-term financial prediction.
 
-The model implements an autoregressive decoder-only LSTM:
+---
 
-At each timestep, the input consists of the known part of the vector and the previously predicted missing part.
+## Methodology
 
-The output is the missing part of the current vector.
+### Model
 
-During training, teacher forcing is used to stabilize learning.
+A **decoder-only LSTM** predicts the missing part of a feature vector at each time step:
 
-During inference, the model predicts autoregressively, using its own past outputs.
+* **Input:** [known features at time t, predicted (or true) missing features at t−1]
+* **Output:** missing features at time t
+* **Training:** teacher forcing (uses ground truth from previous step)
+* **Inference:** autoregressive (feeds its own predictions)
 
-🔧 Key Features
+### Data
 
-Sliding window mechanism (horizon, step) for time series segmentation
+* Train/test data in `./data/`, each with 14 known + 2 missing columns
+* The `time` column is dropped
+* Sequences split into windows of length **1000**, step size **100**
+* Chronological split: 90% train, 10% validation
 
-Chronological train/validation split (no temporal leakage)
+### Training
 
-Interactive training and validation loss curves using Plotly
+| Setting    | Value          |
+| ---------- | -------------- |
+| Hidden Dim | 32             |
+| Loss       | MSE            |
+| Optimizer  | Adam (lr=1e-3) |
+| Epochs     | 20             |
+| Batch Size | 32             |
 
-Evaluation with R² metric on the validation set
+The model minimizes MSE between predicted and true missing parts (`xb_missing[:,1:,:]`).
+
+---
+
+## Results
+
+* **Training loss:** ↓ steadily from ~0.7 → 0.18
+* **Validation loss:** stabilizes around **0.40**
+* Model generalizes well with mild overfitting
+
+Visualizations:
+
+* Plotly loss curves (train vs. val)
+* Time series plots for predicted vs. ground truth `Y1`, `Y2`
+
+---
+
+## Inference
+
+After training, the model predicts `Y1`, `Y2` for the test data autoregressively and saves results as:
+
+```
+final_inference_submission.csv
+```
+
+
+
